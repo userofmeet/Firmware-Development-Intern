@@ -24,11 +24,6 @@ IMUdata acc, gyr;
 float acc_magnitude_buffer[SAMPLE_WINDOW];
 int buffer_index = 0;
 
-int step_count = 0;
-float distance_m = 0.0f;
-float avg_step_length_m = 0.6f;  // Adjust per breed
-uint32_t previous_step_time_ms = 0;
-float speed_mps = 0.0f;
 
 float get_moving_average() {
     float sum = 0;
@@ -43,17 +38,6 @@ const char* detect_activity(float net_magnitude) {
     else return "Running";
 }
 
-bool detect_step(float net_magnitude) {
-    static bool was_below_threshold = true;
-    const float step_threshold = 0.5f;  // tuned after gravity removal
-    if (net_magnitude > step_threshold && was_below_threshold) {
-        was_below_threshold = false;
-        return true;
-    } else if (net_magnitude < step_threshold) {
-        was_below_threshold = true;
-    }
-    return false;
-}
 
 void i2c_master_init() {
     i2c_config_t conf = {};
@@ -99,25 +83,11 @@ void read_sensor_data(void* arg) {
                 if (buffer_index >= SAMPLE_WINDOW) buffer_index = 0;
 
                 float avg_magnitude = get_moving_average();
+                
                 const char* activity = detect_activity(avg_magnitude);
-
                 uint32_t current_time = qmi.getTimestamp();
 
-                if (detect_step(avg_magnitude)) {
-                    step_count++;
-                    distance_m = step_count * avg_step_length_m;
-
-                    float delta_time_s = (current_time - previous_step_time_ms) / 1000.0f;
-                    previous_step_time_ms = current_time;
-
-                    if (delta_time_s > 0) {
-                        speed_mps = avg_step_length_m / delta_time_s;
-                    } else {
-                        speed_mps = 0.0f;
-                    }
-                }
-
-                ESP_LOGI(TAG, "Activity: %s | Steps: %d | Distance: %.2f m | Speed: %.2f m/s", activity, step_count, distance_m, speed_mps);
+                ESP_LOGI(TAG, "Activity: %s", activity);
                 ESP_LOGI(TAG, "Accel: %.2f, %.2f, %.2f", acc.x, acc.y, acc.z);
             }
         }
