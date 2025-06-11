@@ -23,6 +23,7 @@ static const char *TAG = "DOG_TRACKER_BLE";
 #define INFO_CHAR_UUID     "2A5B"
 #define SPEED_CHAR_UUID    "2A5C"
 #define STEPS_CHAR_UUID    "2A5D"
+#define ACTIVITY_CHAR_UUID "2A5E"
 
 static constexpr int kAdvIntervalMs = 100;
 
@@ -46,7 +47,8 @@ static int dogAge = 0;
 static float dogSize = 0.0f;
 static float stepSize = 0.0f;
 
-// ------------------ Utility -------------------
+NimBLECharacteristic* activityChar = nullptr;
+
 static float deg2rad(float deg) {
     return deg * M_PI / 180.0f;
 }
@@ -69,7 +71,7 @@ float estimateStepSize(const std::string &breed, int age, float size) {
     else if (breed == "GermanShepherd") baseStep = 0.80f;
     else if (breed == "GoldenRetriever") baseStep = 0.78f;
     else if (breed == "Bulldog") baseStep = 0.45f;
-    else if (breed == "Poodle") baseStep = 0.60f;
+    else if (breed == "Poodle") baseStep = 0.60f;   
     else if (breed == "Boxer") baseStep = 0.35f;
     else if (breed == "Husky") baseStep = 0.70f;
     else if (breed == "Cockerspaniel") baseStep = 0.48f;
@@ -89,7 +91,6 @@ float estimateStepSize(const std::string &breed, int age, float size) {
     return baseStep;
 }
 
-// ------------------ BLE Classes -------------------
 class ServerCallbacks : public NimBLEServerCallbacks {
     void onConnect(NimBLEServer*, NimBLEConnInfo&) override {
         ESP_LOGI(TAG, "Client connected");
@@ -157,7 +158,6 @@ public:
     }
 };
 
-// ------------------ Sensor Code -------------------
 float get_moving_average() {
     float sum = 0;
     for (int i = 0; i < SAMPLE_WINDOW; ++i) sum += acc_magnitude_buffer[i];
@@ -211,20 +211,24 @@ void read_sensor_data(void* arg) {
                 float avg_mag = get_moving_average();
                 const char* activity = detect_activity(avg_mag);
                 ESP_LOGI(TAG, "Activity: %s, Accel: %.2f %.2f %.2f", activity, acc.x, acc.y, acc.z);
+
+                if (activityChar) {
+                    activityChar->setValue(activity);
+                    activityChar->notify();
+                }
             }
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 
-// ------------------ Main Entry -------------------
 extern "C" void app_main() {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
-    NimBLEDevice::init("MJ-DogTracker");
+    NimBLEDevice::init("MJ");
     NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-    NimBLEDevice::setSecurityAuth(false, false, true);  // Ensure advertising works
+    NimBLEDevice::setSecurityAuth(false, false, true);
 
     NimBLEServer *pServer = NimBLEDevice::createServer();
     pServer->setCallbacks(new ServerCallbacks());
@@ -237,6 +241,7 @@ extern "C" void app_main() {
     auto *speedChar = pSvc->createCharacteristic(SPEED_CHAR_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
     auto *stepsChar = pSvc->createCharacteristic(STEPS_CHAR_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
     auto *infoChar = pSvc->createCharacteristic(INFO_CHAR_UUID, NIMBLE_PROPERTY::WRITE);
+    activityChar = pSvc->createCharacteristic(ACTIVITY_CHAR_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
     infoChar->setCallbacks(new InfoCallbacks());
     rxChar->setCallbacks(new RxCallbacks(echoChar, distChar, speedChar, stepsChar));
@@ -249,26 +254,17 @@ extern "C" void app_main() {
     adv->setMaxInterval(kAdvIntervalMs / 0.625);
     adv->addServiceUUID(COORD_SERVICE_UUID);
 
-    // 🔧 Correct way for NimBLE
-    NimBLEDevice::init("MJ-DogTracker"); // Set internal device name
-    //NimBLEAdvertising *adv = NimBLEDevice::getAdvertising();
-
-    // Advertisement data
     NimBLEAdvertisementData advData;
-    advData.setCompleteServices(NimBLEUUID(COORD_SERVICE_UUID));  // your custom service
+    advData.setCompleteServices(NimBLEUUID(COORD_SERVICE_UUID));
     advData.setAppearance(0x03C0);
     adv->setAdvertisementData(advData);
 
-    // Scan response data with device name
     NimBLEAdvertisementData scanRespData;
-    scanRespData.setName("MJ-DogTracker");
+    scanRespData.setName("MJ");
     adv->setScanResponseData(scanRespData);
 
-    adv->setMinInterval(kAdvIntervalMs / 0.625);  // convert ms to BLE units
-    adv->setMaxInterval(kAdvIntervalMs / 0.625);
-
     adv->start();
-    ESP_LOGI(TAG, "BLE started with name MJ-DogTracker");
+    ESP_LOGI(TAG, "BLE started with name MJ");
 
     setup_sensor();
     xTaskCreate(read_sensor_data, "sensor_read_task", 4096, NULL, 10, NULL);
