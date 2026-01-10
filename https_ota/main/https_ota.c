@@ -117,7 +117,7 @@ void advanced_ota_example_task(void *pvParameter)
 
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
-        .url = "https://192.168.1.4:8081/advanced_https_ota.bin",
+        .url = "https://192.168.29.29:8081/advanced_https_ota.bin",
         .cert_pem = (char *)cert_pem,
         .timeout_ms = 5000,
         .keep_alive_enable = true,
