@@ -13,19 +13,19 @@ Dharmsinh Desai University, Nadiad
 
 ---
 
-## 📌 Abstract
+## Abstract
 
 This internship focused on developing an embedded system prototype for a startup using the ESP32-S3 1.69" Display Development Board by Waveshare. The board integrates a 240MHz dual-core LX7 processor, a 240×280 pixel LCD, onboard Wi-Fi/Bluetooth, and a 6-axis IMU. The system was tested for real-time sensor display, motion tracking, and user interface (UI) elements using C/C++ and the Arduino IDE. This compact yet powerful platform enabled fast prototyping for wearables, IoT dashboards, and interactive interfaces.
 
 ---
 
-## 🔑 Keywords
+## Keywords
 
 ESP32-S3, LCD Display, IoT, Bluetooth, Wi-Fi, BLE Beacon, Microcontroller, IMU, Motion Tracking, Embedded Systems, Arduino, GPS Integration
 
 ---
 
-## 📘 Introduction
+## Introduction
 
 The ESP32-S3 is an advanced microcontroller offering high-performance computing, wireless communication, and multimedia capabilities. The development board used in this project features:
 - **1.69" IPS LCD Display** (240×280 resolution, 262K color)
@@ -39,7 +39,7 @@ This project explores how such a compact platform can be utilized for sensor dat
 
 ---
 
-## 🎯 Internship Tasks
+## Internship Tasks
 
 As part of the internship, the following key tasks were undertaken:
 
@@ -62,7 +62,7 @@ These tasks helped demonstrate the potential of the ESP32-S3 as a multifunctiona
 
 ---
 
-## 🔧 Tools and Technologies Used
+## Tools and Technologies Used
 
 | Tool/Technology | Purpose |
 |-----------------|---------|
@@ -77,7 +77,7 @@ These tasks helped demonstrate the potential of the ESP32-S3 as a multifunctiona
 
 ---
 
-## 🧪 Experimental Setup
+## Experimental Setup
 
 ### Hardware Used:
 - **ESP32-S3 1.69" LCD Display Dev Board**
